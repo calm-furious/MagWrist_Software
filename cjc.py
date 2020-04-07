@@ -8,7 +8,7 @@ ser = serial.Serial('COM9', 1500000)
 loop = 0
 winlen = 50
 
-sensor_num = 10
+sensor_num = 2
 sensor_dim = 3  # XYZ
 
 subplot_row = 4
@@ -32,6 +32,7 @@ AccGyr_Array = []
 for i in range(6):
     AccGyr_Array.append([])
 
+# fig=plt.figure(figsize=(8,8))
 fig = plt.figure()
 # figure add subplot
 axes_array = []
@@ -121,15 +122,6 @@ def data_gen():
                 for ax in axes_array:
                     ax.set(xlim=[loop*winlen, (loop+1)*winlen])
 
-        # choose a pivot and compute relative value(Change as you want)
-        pivot = 3
-        for i in range(sensor_num):
-            if i == pivot:
-                continue
-            for j in range(sensor_dim):
-                Mag_Array[i][j][-1] -= Mag_Array[pivot][j][-1]
-        print(" ")
-
         if loop > 0:
             start = loop*winlen-2
         else:
@@ -138,6 +130,8 @@ def data_gen():
         for i in range(sensor_num):
             down = min([min(row[start:]) for row in Mag_Array[i]])
             up = max([max(row[start:]) for row in Mag_Array[i]])
+            # down = -200
+            # up = -50
             axes_array[i].set(ylim=[
                 down - (up-down)*0.05,
                 up + (up-down)*0.05])
