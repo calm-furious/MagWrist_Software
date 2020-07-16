@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import serial
 
-ser = serial.Serial('COM9', 1500000)
+ser = serial.Serial('COM2', 1500000)
 
 loop = 0
 winlen = 50
@@ -96,12 +96,17 @@ def data_gen():
     while True:
         cnt = cnt + 1
         x = range(loop*winlen, cnt)
-        for i in range(sensor_num+1):
+        for i in range(sensor_num + 2):
             s = ser.readline()
             if i == 0:
                 print(s)
                 print(cnt)
             s = s.decode()
+            if len(s) == 21:
+                try:
+                    print(s)
+                except:
+                    print("int convertion fail!!!")
             if len(s) == 23:  # Three-data information(Magnetometer)
                 s = s.split()
                 try:

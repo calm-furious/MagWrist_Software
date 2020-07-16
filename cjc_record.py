@@ -1,12 +1,17 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import serial
 import signal
 import sys
 import time
 
+import keyboard
 
 # input:Serial object
 # output:np.array[sensor_num][senor_dim]
+
+
 def read_vector_from_serial(ser, sensor_num=10, sensor_dim=3):
     # sensor_dim = 3
     # sensor_num = 10
@@ -29,6 +34,7 @@ def read_vector_from_serial(ser, sensor_num=10, sensor_dim=3):
             # print(s_old)
             continue
         elif (len(s) == 23):
+            # TODO
             s = s.split()
             idx = int(s[-1])
             if(idx in cntlist):
@@ -41,7 +47,7 @@ def read_vector_from_serial(ser, sensor_num=10, sensor_dim=3):
                         print("Some Sensor Crashed!!!!!!!!!!!!!!!!!!")
                         return []
                 for j in range(sensor_dim):
-                    # BUG https://blog.csdn.net/weixin_41713230/article/details/81283813
+                    # BUG because of the range of the sensor, sometimes the numbers may exceed 2048
                     # if(abs(int(s[j])) > 2047):
                     #     # print("WARNING!!!!!!!!!")
                     #     return []
@@ -53,12 +59,12 @@ def read_vector_from_serial(ser, sensor_num=10, sensor_dim=3):
             continue
         else:
             print(s_old)
-            print("String Error")
+            print("String Error")  # Read B again
             return []
     return B
 
 
-def read_batch_from_serial(ser, batch=40, sensor_num=10, sensor_dim=3):
+def read_batch_from_serial(ser, batch=40, sensor_num=10, sensor_dim=3):  # TODO: 改成不停读直到用户按钮
     B_list = []
     B = []
     for i in range(batch):
@@ -87,139 +93,15 @@ def calibration_collection(ser):
             B = B.flatten()
             B_list.append(B)
             B = []
-    except:
+    except:  # cut half way
         del B_list[-1]
         print("Calibration Complete!")
         return np.array(B_list)
 
 
-def single_finger_collection(ser, batch=40):
-
-    original_signal = signal.getsignal(signal.SIGINT)
-
-    print("\nReady?Stretch all fingers and keep steady.")
-    print("Enter Ctrl+C.")
-    # restore interrupt
-    signal.signal(signal.SIGINT, original_signal)
-    try:
-        while 1:
-            s = ser.readline()
-    except:
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        B_null_index = read_batch_from_serial(ser, batch=batch//5)
-    print("\n\nBend your INDEX finger.")
-    print("Enter Ctrl+C.")
-    # restore interrupt
-    signal.signal(signal.SIGINT, original_signal)
-    try:
-        while 1:
-            s = ser.readline()
-    except:
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        B_index = read_batch_from_serial(ser, batch=batch)
-    print(np.mean(B_index, axis=0) - np.mean(B_null_index, axis=0))
-
-    print("\nStretch all fingers and keep steady.")
-    print("Enter Ctrl+C.")
-    # restore interrupt
-    signal.signal(signal.SIGINT, original_signal)
-    try:
-        while 1:
-            s = ser.readline()
-    except:
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        B_null_middle = read_batch_from_serial(ser, batch=batch//5)
-    print("\n\nBend your MIDDLE finger.")
-    print("Enter Ctrl+C.")
-    # restore interrupt
-    signal.signal(signal.SIGINT, original_signal)
-    try:
-        while 1:
-            s = ser.readline()
-    except:
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        B_middle = read_batch_from_serial(ser, batch=batch)
-    print(np.mean(B_middle, axis=0) - np.mean(B_null_middle, axis=0))
-
-    print("\nStretch all fingers and keep steady.")
-    print("Enter Ctrl+C.")
-    # restore interrupt
-    signal.signal(signal.SIGINT, original_signal)
-    try:
-        while 1:
-            s = ser.readline()
-    except:
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        B_null_ring = read_batch_from_serial(ser, batch=batch//5)
-    print("\n\nBend your Ring finger.")
-    print("Enter Ctrl+C.")
-    # restore interrupt
-    signal.signal(signal.SIGINT, original_signal)
-    try:
-        while 1:
-            s = ser.readline()
-    except:
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        B_ring = read_batch_from_serial(ser, batch=batch)
-    print(np.mean(B_ring, axis=0) - np.mean(B_null_ring, axis=0))
-
-    print("\nStretch all fingers and keep steady.")
-    print("Enter Ctrl+C.")
-    # restore interrupt
-    signal.signal(signal.SIGINT, original_signal)
-    try:
-        while 1:
-            s = ser.readline()
-    except:
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        B_null_little = read_batch_from_serial(ser, batch=batch//5)
-    print("\n\nBend your Little finger.")
-    print("Enter Ctrl+C.")
-    # restore interrupt
-    signal.signal(signal.SIGINT, original_signal)
-    try:
-        while 1:
-            s = ser.readline()
-    except:
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        B_little = read_batch_from_serial(ser, batch=batch)
-    print(np.mean(B_little, axis=0) - np.mean(B_null_little, axis=0))
-
-    print("\nStretch all fingers and keep steady.")
-    print("Enter Ctrl+C.")
-    # restore interrupt
-    signal.signal(signal.SIGINT, original_signal)
-    try:
-        while 1:
-            s = ser.readline()
-    except:
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        B_null_thumb = read_batch_from_serial(ser, batch=batch//5)
-    print("\n\nBend your Thumb finger.")
-    print("Enter Ctrl+C.")
-    # restore interrupt
-    signal.signal(signal.SIGINT, original_signal)
-    try:
-        while 1:
-            s = ser.readline()
-    except:
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        B_thumb = read_batch_from_serial(ser, batch=batch)
-    print(np.mean(B_thumb, axis=0) - np.mean(B_null_thumb, axis=0))
-
-    print("Collection Finished!")
-    signal.signal(signal.SIGINT, original_signal)
-    return [B_null_index, B_index,
-            B_null_middle, B_middle,
-            B_null_ring, B_ring,
-            B_null_little, B_little,
-            B_null_thumb, B_thumb]
-
 # match num (0~31) to binary code
 # code[0]: if code[1~5] are all zeros, code[0] is 1, else is 0
 # code[1~5]:index,middle,ring,little,thumb
-
-
 def map_num_to_code(num):
     code = []
     for i in range(5):
@@ -231,11 +113,10 @@ def map_num_to_code(num):
         code[0] = 1
     return code
 
+
 # match code [x,x,x,x,x,x] to gesture name
 # code[0]: NULL
 # code[1~5]:"Index","Middle","Ring","Little","Thumb"
-
-
 def map_code_to_name(code):
     finger_name_list = ["NULL", "Index", "Middle", "Ring", "Little", "Thumb"]
     name = ""
@@ -248,11 +129,10 @@ def map_code_to_name(code):
             name = name+finger_name_list[i]
     return name
 
+
 # collect all gestures(32) data
 # input: batch(num of vectors for each gesture)
 # output: 3-D array with size (32,batch,dimension(30))
-
-
 def multiple_finger_collection(ser, batch=40):
 
     original_signal = signal.getsignal(signal.SIGINT)
@@ -270,6 +150,10 @@ def multiple_finger_collection(ser, batch=40):
         # restore interrupt
         signal.signal(signal.SIGINT, original_signal)
         try:
+            # TODO: while readflag == 1
+            # 在键盘监听事件里把flag改了
+            # 先写个例程试试
+
             while 1:
                 s = ser.readline()
         except:
@@ -299,12 +183,11 @@ def multiple_finger_collection(ser, batch=40):
     finger_list = posture_list[1:]
     return np.array(null_batch), np.array(finger_list)
 
+
 # convert a batch list to difference vector list
 # input: batch_list [null1_batch, finger1_batch,null2_batch,finger2_batch...]
 # output: diff_list [null_batch_all, finger1_batch,finger2_batch...]
-
-
-def convert_batch_list_to_diff_list(batch_list):
+def convert_batch_list_to_diff_list(batch_list):  # TODO change 似乎可以不要
     for i in range(0, len(batch_list), 2):
         base_vec = np.mean(batch_list[i], axis=0)
         # a batch of vector substract base vector
@@ -315,11 +198,10 @@ def convert_batch_list_to_diff_list(batch_list):
     null_batch = np.vstack(null_list)
     return [null_batch]+finger_list
 
+
 # convert a batch list to vector list for each posture
 # input: batch_list [null1_batch, finger1_batch,null2_batch,finger2_batch...]
 # output: diff_list [null_batch_all, finger1_batch,finger2_batch...]
-
-
 def convert_batch_list_to_posture_list(batch_list):
     '''
     for i in range(0,len(batch_list),2):

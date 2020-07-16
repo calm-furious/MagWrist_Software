@@ -24,8 +24,8 @@ for i in range(sensor_num):
     Sensor_Dims = []
     for j in range(sensor_dim):
         Sensor_Dim_Vector = [0]
-        Sensor_Dims.append(Sensor_Dim_Vector)
-    Mag_Array.append(Sensor_Dims)
+        Sensor_Dims.append(Sensor_Dim_Vector)  # [[0],[0],[0]]
+    Mag_Array.append(Sensor_Dims)  # [[[0],[0],[0]]*10]
 
 # create empty AccGyr_Array[6][time]
 AccGyr_Array = []
@@ -36,6 +36,7 @@ fig = plt.figure()
 # figure add subplot
 axes_array = []
 line_array = []
+
 
 if(sensor_num == 10):
     axes_array.append(fig.add_subplot(subplot_row, subplot_col, 3))
@@ -57,6 +58,8 @@ else:
 # subplot draw line
 templen = 100
 for ax in axes_array[:-1]:
+    ax.tick_params(labelsize=8)
+
     temp = []
     for i in range(sensor_dim):
 
@@ -95,12 +98,17 @@ def data_gen():
     while True:
         cnt = cnt + 1
         x = range(loop*winlen, cnt)
-        for i in range(sensor_num+1):
+        for i in range(sensor_num+2):
             s = ser.readline()
             if i == 0:
                 print(s)
                 print(cnt)
             s = s.decode()
+            if len(s) == 21:
+                try:
+                    print(s)
+                except:
+                    print("int convertion fail!!!")
             if len(s) == 23:  # Three-data information(Magnetometer)
                 s = s.split()
                 try:

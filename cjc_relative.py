@@ -3,40 +3,51 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import serial
 
-ser = serial.Serial('COM9', 1500000)
+ser = serial.Serial('COM2', 1500000)
 
 loop = 0
 winlen = 50
 
-sensor_num = 2
+sensor_num = 10
 sensor_dim = 3  # XYZ
+
+sample_len = 15  # sample length of the offset
 
 subplot_row = 4
 subplot_col = 3
 
 x = []
 
+geomeg = []
+for i in range(10):
+    geomegeach = []
+    for j in range(3):
+        geomegeach.append(0)
+    geomeg.append(geomegeach)
+
 
 # create empty Mag_Array
 Mag_Array = []
+mag_offset = []
 
 for i in range(sensor_num):
     Sensor_Dims = []
     for j in range(sensor_dim):
         Sensor_Dim_Vector = [0]
-        Sensor_Dims.append(Sensor_Dim_Vector)
-    Mag_Array.append(Sensor_Dims)
+        Sensor_Dims.append(Sensor_Dim_Vector[:])  # [[0],[0],[0]]
+    Mag_Array.append(Sensor_Dims[:])  # [[[0],[0],[0]]*10]
+    mag_offset.append([0, 0, 0])
 
 # create empty AccGyr_Array[6][time]
 AccGyr_Array = []
 for i in range(6):
     AccGyr_Array.append([])
 
-# fig=plt.figure(figsize=(8,8))
 fig = plt.figure()
 # figure add subplot
 axes_array = []
 line_array = []
+
 
 if(sensor_num == 10):
     axes_array.append(fig.add_subplot(subplot_row, subplot_col, 3))
@@ -58,6 +69,8 @@ else:
 # subplot draw line
 templen = 100
 for ax in axes_array[:-1]:
+    ax.tick_params(labelsize=8)
+
     temp = []
     for i in range(sensor_dim):
 
@@ -94,19 +107,53 @@ def data_gen():
     winlen = 100
 
     while True:
+        if (cnt == 0):  # 第一次进来时截取一段作为offset
+            for i in range(sample_len):  # sample_len个样本 sample_len/5 second
+                for j in range(sensor_num + 2):
+                    s = ser.readline()
+                    if i == 0:
+                        print(s)
+                        print(cnt)
+                    s = s.decode()
+                    if len(s) == 21:
+                        try:
+                            print(s)
+                        except:
+                            print("int convertion fail!!!")
+                    if len(s) == 23:  # Three-data information(Magnetometer)
+                        s = s.split()
+                        try:
+                            for j in range(sensor_dim):
+                                mag_offset[int(
+                                    s[-1])][j] = mag_offset[int(s[-1])][j]+(int(s[j]))
+                        except:
+                            print("int covertion fail!!!")
+                    elif len(s) == 44:  # Six-data information(Motion sensor)
+                        pass
+            for i in range(sensor_num):
+                for j in range(sensor_dim):
+                    mag_offset[i][j] = int(mag_offset[i][j]/sample_len)
+
         cnt = cnt + 1
-        x = range(loop*winlen, cnt)
-        for i in range(sensor_num+1):
+        x = range(loop * winlen, cnt)
+
+        for i in range(sensor_num+2):
             s = ser.readline()
             if i == 0:
                 print(s)
                 print(cnt)
             s = s.decode()
+            if len(s) == 21:
+                try:
+                    print(s)
+                except:
+                    print("int convertion fail!!!")
             if len(s) == 23:  # Three-data information(Magnetometer)
                 s = s.split()
                 try:
                     for j in range(sensor_dim):
-                        Mag_Array[int(s[-1])][j].append(int(s[j]))
+                        Mag_Array[int(s[-1])][j].append(int(s[j]) -
+                                                        mag_offset[int(s[-1])][j])
                 except:
                     print("int covertion fail!!!")
             elif len(s) == 44:  # Six-data information(Motion sensor)
@@ -122,6 +169,15 @@ def data_gen():
                 for ax in axes_array:
                     ax.set(xlim=[loop*winlen, (loop+1)*winlen])
 
+        # choose a pivot and compute relative value(Change as you want)
+        # pivot = 8
+        # for i in range(sensor_num):
+        #     if i == pivot:
+        #         continue
+        #     for j in range(sensor_dim):
+        #         Mag_Array[i][j][-1] -= Mag_Array[pivot][j][-1]
+        # print(" ")
+
         if loop > 0:
             start = loop*winlen-2
         else:
@@ -130,8 +186,6 @@ def data_gen():
         for i in range(sensor_num):
             down = min([min(row[start:]) for row in Mag_Array[i]])
             up = max([max(row[start:]) for row in Mag_Array[i]])
-            # down = -200
-            # up = -50
             axes_array[i].set(ylim=[
                 down - (up-down)*0.05,
                 up + (up-down)*0.05])

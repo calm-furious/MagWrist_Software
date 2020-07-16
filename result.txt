@@ -1,0 +1,12 @@
+0.84
+Best parameters:{'C': 10000, 'gamma': 0.001} svc rbf
+
+0.77
+Best parameters:{'C': 0.001, 'degree': 3, 'gamma':& 'kernel': 'poly'} svc
+
+0.80
+Best parameters:{'n_neighbors': 5, 'p': 7}
+
+0.74
+Best parameters:{'max_depth': 50, 'n_estimators': 50}
+
